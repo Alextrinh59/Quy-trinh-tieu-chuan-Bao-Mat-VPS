@@ -1,13 +1,10 @@
 # QUY TRÌNH TIÊU CHUẨN BẢO MẬT MÁY CHỦ VPS
 
 > **Phiên bản:** 2.1  
-> **Phạm vi áp dụng:** Máy chủ ảo (VPS) — dạng KVM hoặc LXC container — chạy hệ điều hành Ubuntu 22.04 LTS / 24.04 LTS hoặc Debian 12  
-> **Tài liệu tham khảo:** Quy trình bảo mật của *levelsio.dev* (mục *"Securing a new VPS"*) và video thực nghiệm của ByteGrad (*"I tried levelsio VPS setup"*).  
-> **Định dạng tài liệu:** Được chia thành từng giai đoạn (Phase) độc lập để ánh xạ trực tiếp 1:1 vào script tự động hóa (mỗi Phase tương ứng với một phân đoạn trong script).  
-> **Lịch sử thay đổi:** Phiên bản 2.1 — loại bỏ các bước không tương thích với môi trường LXC/ZFS (bước tạo swap file), bổ sung các lưu ý vận hành đặc thù cho container và cho mô hình triển khai nhiều website khách hàng trên cùng một VPS.
-
----
-
+Người yêu cầu & chủ sở hữu ý tưởng: Anh Tony - Consulting Director yêu cầu xây dựng bộ quy chuẩn bảo mật VPS và toàn bộ ý tưởng cốt lõi của quy trình này do anh Tony chủ trì, cung cấp thông qua video: https://youtu.be/SZX1mZiJWPA .
+Nguồn nội dung: Toàn bộ nội dung kỹ thuật trong tài liệu này được bóc tách và hệ thống hóa từ video, bao gồm quy trình bảo mật của levelsio.dev (mục "Securing a new VPS") và video thực nghiệm của ByteGrad ("I tried levelsio VPS setup") - không phải do người soạn thảo tài liệu tự sáng tạo; phần chỉnh sửa chỉ mang tính thích nghi với môi trường thực tế của công ty (LXC/ZFS, VPS nội bộ) và được ghi nhận đầy đủ ở mục Lịch sử thay đổi bên dưới.
+Phạm vi áp dụng: Máy chủ ảo (VPS) — dạng KVM hoặc LXC container — chạy hệ điều hành Ubuntu 22.04 LTS / 24.04 LTS hoặc Debian 12.
+Định dạng tài liệu: Được chia thành từng giai đoạn (Phase) độc lập để ánh xạ trực tiếp 1:1 vào script tự động hóa (mỗi Phase tương ứng với một phân đoạn trong script).
 ## 1. Tổng quan
 
 ### 1.1. Mục đích
