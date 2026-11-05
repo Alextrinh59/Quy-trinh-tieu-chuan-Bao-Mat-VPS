@@ -150,7 +150,8 @@ Một máy chủ VPS vừa khởi tạo trên mạng Internet sẽ bị các m�
 
 
 <p align="center">
-    <img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/82fcc25a-4008-426e-9482-b078be8ffae4" />
+    <img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/1ada53ea-e416-47c0-a930-be6c911ef9c6" />
+Quy Trình Bảo Mật Mạng UFW
     <img width="983" height="739" alt="image" src="https://github.com/user-attachments/assets/951fa2b7-fbaf-4fd2-a8d5-fdeb3e08c4b4" />
 </p>
 
