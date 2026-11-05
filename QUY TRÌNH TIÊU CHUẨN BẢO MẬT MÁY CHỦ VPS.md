@@ -1,8 +1,8 @@
 # QUY TRÌNH TIÊU CHUẨN BẢO MẬT MÁY CHỦ VPS
 
 > **Phiên bản:** 2.1  
-> **Người yêu cầu & chủ sở hữu ý tưởng:** Anh **Tony-Consulting Director** — yêu cầu xây dựng bộ quy chuẩn bảo mật VPS, và toàn bộ ý tưởng cốt lõi của quy trình này do anh Tony chủ trì, cung cấp thông qua video: https://youtu.be/SZX1mZiJWPA .
-> > **Nguồn nội dung:** Toàn bộ nội dung kỹ thuật trong tài liệu này được **bóc tách và hệ thống hóa từ video**, bao gồm quy trình bảo mật của *levelsio.dev* (mục *"Securing a new VPS"*) và video thực nghiệm của ByteGrad (*"I tried levelsio VPS setup"*) — **không phải do người soạn thảo tài liệu tự sáng tạo**; phần chỉnh sửa chỉ mang tính thích nghi với môi trường thực tế của công ty (LXC/ZFS, VPS nội bộ) và được ghi nhận đầy đủ ở mục *Lịch sử thay đổi* bên dưới.  
+> **Người yêu cầu & chủ sở hữu ý tưởng:** Anh **Tony-Consulting Director** — yêu cầu xây dựng bộ quy chuẩn bảo mật VPS, và toàn bộ ý tưởng cốt lõi của quy trình này do anh Tony chủ trì, cung cấp thông qua video: https://youtu.be/SZX1mZiJWPA.
+> **Nguồn nội dung:** Toàn bộ nội dung kỹ thuật trong tài liệu này được **bóc tách và hệ thống hóa từ video**, bao gồm quy trình bảo mật của *levelsio.dev* (mục *"Securing a new VPS"*) và video thực nghiệm của ByteGrad (*"I tried levelsio VPS setup"*) - **không phải do người soạn thảo tài liệu tự sáng tạo**; phần chỉnh sửa chỉ mang tính thích nghi với môi trường thực tế của công ty (LXC/ZFS, VPS nội bộ).  
 > **Phạm vi áp dụng:** Máy chủ ảo (VPS) — dạng KVM hoặc LXC container — chạy hệ điều hành Ubuntu 22.04 LTS / 24.04 LTS hoặc Debian 12.  
 > **Định dạng tài liệu:** Được chia thành từng giai đoạn (Phase) độc lập để ánh xạ trực tiếp 1:1 vào script tự động hóa (mỗi Phase tương ứng với một phân đoạn trong script).  
 > **Lịch sử thay đổi:** Phiên bản 2.1 — loại bỏ các bước không tương thích với môi trường LXC/ZFS (bước tạo swap file), bổ sung các lưu ý vận hành đặc thù cho container và cho mô hình triển khai nhiều website khách hàng trên cùng một VPS.
@@ -23,13 +23,17 @@ Một máy chủ VPS vừa khởi tạo trên mạng Internet sẽ bị các m�
 
 ### 1.3. Các cấp độ bảo mật (Security Levels)
 
-| Cấp độ | Tên cấp độ | Các giai đoạn bao gồm | Đối tượng áp dụng |
-| :--- | :--- | :--- | :--- |
-| **L1** | **Cơ bản (Bắt buộc)** | Từ Phase 0 đến Phase 4 | Áp dụng bắt buộc cho mọi VPS trước khi chạy ứng dụng. |
-| **L2** | **Tiêu chuẩn** | Cấp độ L1 + Phase 5 & 6 (Tailscale, tmux, công cụ lập trình) | VPS được sử dụng làm môi trường phát triển hoặc máy làm việc chính. |
-| **L3** | **Production (Thực tế)** | Cấp độ L2 + Phase 7, 8 & 9 (Cloudflare Tunnel, Sao lưu, Kiểm toán) | VPS vận hành dịch vụ công khai cho người dùng cuối và lưu trữ dữ liệu quan trọng. |
+<p align="center">
+  <img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/18c0f49c-d4dc-4c41-b94b-d1f9d1563a6a" />
+</p>
+
 
 ### 1.4. Quy tắc an toàn bắt buộc (Áp dụng cho toàn bộ quy trình)
+
+<p align="center">
+  <img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/a113c289-823c-4fc4-91ec-105284d93a3f" />
+</p>
+
 
 1. **Luôn mở sẵn đường truy cập dự phòng:** Mở sẵn giao diện Web Console (noVNC hoặc Serial Console) trên trang quản trị của nhà cung cấp VPS. Đây là con đường duy nhất để cứu máy chủ nếu bạn cấu hình sai làm khóa kết nối SSH. *Đối với VPS dạng LXC, cần xác nhận trước với nhà cung cấp hình thức truy cập dự phòng (web console trong panel hay rescue mode), vì không phải nhà cung cấp nào cũng cung cấp noVNC cho container.*
 2. **Duy trì song song 2 phiên kết nối SSH:** Khi thực hiện các thay đổi liên quan đến quyền truy cập hoặc tường lửa, luôn giữ một phiên SSH gốc đang mở để có thể hoàn tác ngay nếu xảy ra sự cố.
@@ -65,6 +69,11 @@ Một máy chủ VPS vừa khởi tạo trên mạng Internet sẽ bị các m�
 | **0.4** | Kiểm tra thông tin mạng, phiên bản hệ điều hành và thông số phần cứng | `hostname; ip -4 addr show \| grep inet; cat /etc/os-release \| head -2; free -h; nproc; df -h /; systemd-detect-virt` | Hiển thị đúng địa chỉ IP công khai, đúng phiên bản Ubuntu 24.04 / Debian 12 và đầy đủ thông số phần cứng (RAM, CPU, dung lượng ổ đĩa, **kiểu ảo hóa**) để ghi nhận vào hồ sơ quản trị máy chủ. |
 | **0.5** | Xác nhận mức độ sử dụng ổ đĩa ban đầu để lập đường base-line giám sát | `df -h /` | Ghi nhận tỷ lệ phần trăm sử dụng hiện tại (trên máy chủ mới thường dưới $10\%$) làm chuẩn so sánh cho các đợt bảo trì định kỳ sau này. |
 
+<p align="center">
+    <img width="1466" height="920" alt="image" src="https://github.com/user-attachments/assets/93e0f06b-e28e-4279-bd4d-128799abc059" />
+</p>
+
+
 **Lưu ý rủi ro:**
 * Nếu chưa mở được Web Console dự phòng và mới chỉ có 1 phiên kết nối SSH: **Dừng lại ngay**, mở đầy đủ trước khi tiếp tục.
 * Nếu các thông số phần cứng thực tế không khớp với những gì nhà cung cấp công bố (dung lượng ổ đĩa, RAM, số vCPU): Liên hệ bộ phận hỗ trợ kỹ thuật của nhà cung cấp kiểm tra trước khi triển khai ứng dụng.
@@ -79,15 +88,15 @@ Một máy chủ VPS vừa khởi tạo trên mạng Internet sẽ bị các m�
 
 | Bước | Nội dung công việc | Lệnh thực thi | Cách kiểm tra & Kết quả kỳ vọng |
 | :--- | :--- | :--- | :--- |
-| **1.1** | Cập nhật danh sách và nâng cấp toàn bộ gói phần mềm hiện có | `sudo apt update && sudo apt full-upgrade -y` | Quá trình cập nhật hoàn tất mà không phát sinh lỗi xung đột gói. |
-| **1.2** | Cài đặt bộ công cụ bảo mật và quản trị cơ bản | `sudo apt install -y ufw fail2ban unattended-upgrades curl ca-certificates vim sudo logrotate` | Chạy lệnh `dpkg -l ufw fail2ban` xác nhận các gói đã ở trạng thái `ii` (đã cài đặt). |
+| **1.1** | Cập nhật danh sách và nâng cấp toàn bộ gói phần mềm hiện có | `sudo apt update && sudo apt full-upgrade -y` |  <img width="640" height="270" alt="image" src="https://github.com/user-attachments/assets/43d1503e-ba4a-471c-9f1e-5c38df4b70d7" />|
+| **1.2** | Cài đặt bộ công cụ bảo mật và quản trị cơ bản | `sudo apt install -y ufw fail2ban unattended-upgrades curl ca-certificates vim sudo logrotate` | Chạy lệnh `dpkg -l ufw fail2ban` xác nhận các gói đã ở trạng thái `ii` (đã cài đặt). <img width="1248" height="250" alt="image" src="https://github.com/user-attachments/assets/efcf1a9a-01ce-4819-97f8-980bf5a108be" /> |
 | **1.3** | Thiết lập tên định danh máy chủ (Hostname) | `sudo hostnamectl set-hostname <HOSTNAME>` | Chạy lệnh `hostname` trả về đúng tên mới vừa đặt. |
-| **1.4** | Thiết lập múi giờ chuẩn cho hệ thống | `sudo timedatectl set-timezone <TZ>` | Chạy lệnh `timedatectl` hiển thị đúng múi giờ mong muốn. |
+| **1.4** | Thiết lập múi giờ chuẩn cho hệ thống | `sudo timedatectl set-timezone <TZ>` | Chạy lệnh `timedatectl` hiển thị đúng múi giờ mong muốn. <img width="898" height="281" alt="image" src="https://github.com/user-attachments/assets/55c9afa2-01fb-4143-bdf4-5a6d303250bd" /> |
 | **1.5** | Kiểm tra khả năng dùng bộ nhớ ảo (Swap) và ghi nhận baseline dung lượng RAM *(Lưu ý: trên môi trường LXC chạy hệ thống tệp ZFS của công ty, bước tạo swap file **không thể thực hiện** vì kernel từ chối nhận swap file tạo trên ZFS. Vì vậy quy trình thay chuỗi lệnh tạo swap bằng việc kiểm tra và ghi nhận dung lượng RAM thực tế; nếu sau này có nhu cầu bắt buộc cần Swap, yêu cầu nhà cung cấp cấp sẵn swap partition từ phía host)* | `free -h` *(ghi nhận tổng RAM; kiểm tra xem nhà cung cấp có cấp sẵn Swap nào không)* | Dung lượng RAM thực tế được ghi nhận vào hồ sơ máy chủ. Kết quả không có Swap là **trạng thái bình thường** của môi trường này; việc theo dõi sức khỏe RAM được thực hiện định kỳ tại **Mục 4.2, hạng mục 5**. |
 | **1.6** | Khởi tạo vùng nhớ tạm (tmpfs) $1\text{ GB}$ cho thư mục `/tmp` *(Giúp các tiến trình ghi dữ liệu tạm không làm đầy ổ cứng vật lý; khi máy khởi động lại, toàn bộ dữ liệu tạm tự động được dọn sạch)* | `sudo systemctl set-property tmp.mount SizeMax=1G && sudo mount -o remount,size=1G tmp` | Chạy lệnh `df -h /tmp` hiển thị dung lượng $1\text{ GB}$ trên hệ thống tập tin tmpfs. |
 | **1.7** | Ràng buộc dung lượng tối đa cho thư mục bộ nhớ đệm của hệ thống | Kiểm tra và chỉnh sửa tệp `/etc/tmpfiles.d/` nếu cần, đảm bảo chính sách dọn dẹp bộ nhớ đệm mặc định của hệ thống được giữ nguyên (thực hiện mỗi ngày, giữ lại tối đa 30 ngày). | Chạy lệnh `systemd-tmpfiles --clean --dry-run` không phát hiện bất kỳ mục nào vượt quá ngưỡng dung lượng cho phép. |
-| **1.8** | Ràng buộc độ dài nhật ký của dịch vụ systemd *(Nhật ký hệ thống là một trong những nguyên nhân phổ biến nhất khiến ổ đĩa đầy dần theo thời gian, đặc biệt trên các máy chủ có dung lượng lưu trữ hạn chế)* | Dùng lệnh `sudo tee /etc/systemd/journald.conf.d/limit.conf` để ghi:<br>`[Journal]`<br>`SystemMaxUse=500M`<br>`SystemMaxFileSize=50M`<br>Sau đó chạy `sudo systemctl restart systemd-journald` | Chạy lệnh `journalctl --disk-usage` cho thấy dung lượng chiếm dụng hiện đã được giới hạn quanh mức $500\text{ MB}$ hoặc thấp hơn. |
-| **1.9** | Khởi động lại máy chủ nếu có bản cập nhật nhân hệ điều hành (Kernel) | `if [ -f /var/run/reboot-required ]; then sudo reboot; fi` | Máy chủ khởi động lại thành công, kết nối lại được qua SSH và toàn bộ cấu hình ở các bước 1.6, 1.7, 1.8 được áp dụng đầy đủ. *(Trên VPS dạng LXC, tệp `reboot-required` gần như không xuất hiện vì container dùng chung kernel với máy host — lệnh này tự động bỏ qua trong trường hợp đó.)* |
+| **1.8** | Ràng buộc độ dài nhật ký của dịch vụ systemd *(Nhật ký hệ thống là một trong những nguyên nhân phổ biến nhất khiến ổ đĩa đầy dần theo thời gian, đặc biệt trên các máy chủ có dung lượng lưu trữ hạn chế)* | Dùng lệnh `sudo tee /etc/systemd/journald.conf.d/limit.conf` để ghi:<br>`[Journal]`<br>`SystemMaxUse=500M`<br>`SystemMaxFileSize=50M`<br>Sau đó chạy `sudo systemctl restart systemd-journald` | Chạy lệnh `journalctl --disk-usage` cho thấy dung lượng chiếm dụng hiện đã được giới hạn quanh mức $500\text{ MB}$ hoặc thấp hơn. <img width="1019" height="384" alt="image" src="https://github.com/user-attachments/assets/c19a9a5b-278b-4ad3-a7e5-d299829342e2" />|
+| **1.9** | Khởi động lại máy chủ nếu có bản cập nhật nhân hệ điều hành (Kernel) | `if [ -f /var/run/reboot-required ]; then sudo reboot; fi` | Máy chủ khởi động lại thành công, kết nối lại được qua SSH và toàn bộ cấu hình ở các bước 1.6, 1.7, 1.8 được áp dụng đầy đủ. *(Trên VPS dạng LXC, tệp `reboot-required` gần như không xuất hiện vì container dùng chung kernel với máy host — lệnh này tự động bỏ qua trong trường hợp đó.)* <img width="1140" height="249" alt="image" src="https://github.com/user-attachments/assets/4bd34186-01ea-4f9b-b26d-de24afb8908d" /> |
 
 **Lưu ý tương thích hệ điều hành:** Các câu lệnh ở giai đoạn này hoạt động hoàn toàn giống nhau trên cả Ubuntu 24.04 và Debian 12.
 
@@ -112,6 +121,10 @@ Một máy chủ VPS vừa khởi tạo trên mạng Internet sẽ bị các m�
 | **2.8** | ✅ **Chốt kiểm tra bắt buộc số 2:** Xác nhận cấu hình chặn `root` đã có hiệu lực | Mở thêm một cửa sổ Terminal trên máy cá nhân: thử đăng nhập lại bằng `ssh <USER>@<IP>` và thử đăng nhập bằng `ssh root@<IP>`. | Tài khoản `<USER>` vào được bình thường; tài khoản `root` bị từ chối ngay lập tức với thông báo `Permission denied`. |
 | **2.9** | Khóa tài khoản `root` để vô hiệu hóa hoàn toàn khả năng đăng nhập cục bộ bằng mật khẩu *(Khuyến nghị)* | `sudo passwd -l root` | Tài khoản `root` không còn khả năng xác thực bằng mật khẩu. |
 
+<p align="center">
+    <img width="1902" height="1019" alt="image" src="https://github.com/user-attachments/assets/659eab43-3b84-442d-9074-6d456a2f784a" />
+</p>
+
 **Lưu ý quan trọng theo từng bản phân phối (Distro):**
 * **Đối với Ubuntu 24.04:** Dịch vụ SSH sử dụng cơ chế *socket activation* và tên dịch vụ là `ssh` (không phải `sshd`). Ngoài ra, các bản cài đặt đám mây (Cloud Image) của Ubuntu thường có sẵn tệp cấu hình phụ trong thư mục `/etc/ssh/sshd_config.d/` (ví dụ `50-cloud-init.conf`) bật sẵn xác thực mật khẩu. Việc đặt tên tệp là `00-hardening.conf` giúp các quy tắc bảo mật của chúng ta được đọc đầu tiên và được ưu tiên áp dụng (do OpenSSH áp dụng giá trị của chỉ thị xuất hiện đầu tiên).
 * **Đối với Ubuntu 22.04 và Debian 12:** Tên dịch vụ quản lý bởi systemd là `sshd` (chưa sử dụng cơ chế socket activation). Cơ chế thư mục cấu hình phụ `sshd_config.d/` hoạt động tương tự như Ubuntu 24.04.
@@ -133,6 +146,13 @@ Một máy chủ VPS vừa khởi tạo trên mạng Internet sẽ bị các m�
 | **3.5** | **Không mở bất kỳ cổng Web inbound nào** — website khách hàng được công khai ra Internet bằng Cloudflare Tunnel (Phase 7), chỉ dùng kết nối chiều đi | *(Không có lệnh — chủ động bỏ qua bước này)* | `ufw status` không hiển thị quy tắc 80/443. |
 | **3.6** | Kích hoạt tường lửa UFW | `sudo ufw --force enable` | Thông báo `Firewall is active and enabled on system startup`. |
 | **3.7** | ✅ Kiểm tra UFW đang hoạt động và quy tắc đúng | `sudo ufw status verbose`, đồng thời từ thiết bị trong mạng công ty chạy `ssh <USER>@<IP>` | `Status: active` với duy nhất các quy tắc của dải mạng công ty; SSH từ máy công ty hoạt động bình thường. |
+
+
+
+<p align="center">
+    <img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/82fcc25a-4008-426e-9482-b078be8ffae4" />
+    <img width="983" height="739" alt="image" src="https://github.com/user-attachments/assets/951fa2b7-fbaf-4fd2-a8d5-fdeb3e08c4b4" />
+</p>
 
 **Lưu ý kiến trúc bảo mật (đặc thù VPS nội bộ):**
 * **Kiến trúc hai lớp phòng vệ:** Lớp 1 = hạ tầng mạng công ty (chặn sẵn truy cập từ bên ngoài, do công ty thiết lập sẵn) + Lớp 2 = UFW trên máy chủ (giai đoạn này). Hai lớp bổ trợ cho nhau — **không được tắt hoặc nới lỏng UFW** với lý do "lớp mạng đã chặn rồi", vì bất kỳ thay đổi nào ở lớp mạng sẽ để máy chủ trơ trụi.
@@ -156,6 +176,11 @@ Một máy chủ VPS vừa khởi tạo trên mạng Internet sẽ bị các m�
 | **4A.2** | Kích hoạt dịch vụ Fail2ban khởi động cùng hệ thống | `sudo systemctl enable --now fail2ban` | Chạy lệnh `systemctl is-active fail2ban` trả về `active`. |
 | **4A.3** | ✅ Kiểm tra trạng thái giám sát đối với dịch vụ SSH | `sudo fail2ban-client status sshd` | Hiển thị bảng trạng thái `Status for the jail: sshd` cùng số lượng IP đang bị chặn. |
 
+<p align="center">
+<img width="1012" height="578" alt="image" src="https://github.com/user-attachments/assets/3338fefa-80c7-49dd-9bf4-bdda1be6f646" />
+<img width="1460" height="489" alt="image" src="https://github.com/user-attachments/assets/2b3c4034-2145-4bbf-8363-2726a01b8249" />
+</p>
+
 **Lưu ý theo từng bản phân phối:**
 * Trên cả **Ubuntu 24.04** (mặc định dùng `nftables`) và **Debian 12** (mặc định dùng `iptables-multiport`), việc khai báo tường minh `banaction = ufw` giúp đồng bộ hoàn toàn các lệnh chặn IP của Fail2ban vào danh sách quản lý của tường lửa UFW, giúp việc tra cứu và gỡ chặn dễ dàng hơn.
 
@@ -178,6 +203,17 @@ Một máy chủ VPS vừa khởi tạo trên mạng Internet sẽ bị các m�
 | **5.2** | Kết nối máy chủ vào mạng Tailnet và bật tính năng Tailscale SSH | **Thủ công:** `sudo tailscale up --ssh` *(mở đường dẫn hiện ra trên trình duyệt để xác thực)*<br>**Tự động (Script):** `sudo tailscale up --ssh --authkey=<TS_AUTHKEY>` | Chạy lệnh `tailscale status` thấy máy chủ hiển thị trạng thái trực tuyến. |
 | **5.3** | ✅ Kiểm tra kết nối từ máy tính cá nhân (đã cài đặt và đăng nhập cùng mạng Tailscale) | Trên máy tính cá nhân chạy:<br>`tailscale ping <IP-Tailscale-của-VPS>`<br>và `ssh <USER>@<IP-Tailscale-của-VPS>` | Lệnh ping phản hồi thành công và đăng nhập SSH mượt mà qua địa chỉ IP nội bộ của Tailscale (`100.x.y.z`). |
 
+<p align="center">
+
+
+<img width="1477" height="711" alt="image" src="https://github.com/user-attachments/assets/deed80a3-18e8-4c1e-afa9-a64534298c57" />
+Các câu lệnh cài đặt TailScale
+
+<img width="954" height="463" alt="image" src="https://github.com/user-attachments/assets/2bc40f71-abac-4deb-acc3-63bf989ccd88" />
+Truy cập VPS thành công qua Tail Scale trên powershell
+
+</p>
+
 **⚠️ Biến thể LXC — chế độ Userspace Networking (bắt buộc khi container không có thiết bị TUN):**
 
 Khi VPS chạy dưới dạng **LXC container** (vd trên Proxmox), `tailscaled` ở chế độ chuẩn cần thiết bị mạng ảo `/dev/net/tun` để tạo card mạng `tailscale0`. Nếu container chưa được host cấp thiết bị này, dịch vụ sẽ khởi động rồi tự chết với thông báo `CreateTUN("tailscale0") failed; /dev/net/tun does not exist` và `systemctl is-active tailscaled` cho thấy trạng thái `deactivating` lặp lại. Trước tiên kiểm tra bằng lệnh `ls -l /dev/net/tun`. Có hai hướng xử lý:
@@ -194,11 +230,6 @@ Khi VPS chạy dưới dạng **LXC container** (vd trên Proxmox), `tailscaled`
   sudo systemctl restart tailscaled
   ```
   Sau đó tiếp tục **Bước 5.2 và 5.3** như bình thường. **Hạn chế của chế độ này:** không tạo ra giao diện `tailscale0` (do đó **không chạy Bước 3.4** của Phase 3), máy chủ không làm được *exit node*, và các ứng dụng khác trên máy chủ muốn giao tiếp ra Tailnet phải định tuyến qua proxy SOCKS5 tại `localhost:1055`. Với mục đích truy cập quản trị từ xa (SSH + Tailscale SSH), chế độ này đáp ứng đầy đủ.
-
-**Tùy chọn nâng cao (Thực hiện thủ công sau khi mạng Tailscale đã hoạt động ổn định):**
-* Bạn có thể ẩn hoàn toàn cổng SSH khỏi mạng Internet công cộng bằng cách chỉ cho phép kết nối SSH đi qua mạng Tailscale: chạy lệnh `sudo ufw allow in on tailscale0 to any port 22 proto tcp`, sau đó xóa quy tắc mở cổng SSH công cộng bằng lệnh `sudo ufw delete allow OpenSSH`. Khi đó, các công cụ quét cổng trên Internet sẽ thấy cổng 22 của máy chủ hoàn toàn đóng. *(Áp dụng khi chạy ở chế độ TUN chuẩn — có giao diện `tailscale0`. Với chế độ Userspace Networking, giao diện này không tồn tại nên mục tùy chọn này không áp dụng.)*
-
----
 
 ### PHASE 6 — CÀI ĐẶT CÔNG CỤ LÀM VIỆC & PHÁT TRIỂN (Dev Tools: tmux & Claude Code)
 
@@ -228,6 +259,11 @@ Khi VPS chạy dưới dạng **LXC container** (vd trên Proxmox), `tailscaled`
 | **7.3** | Cấu hình điều hướng tên miền (Ingress Routing) về cổng ứng dụng nội bộ | Thiết lập trỏ tên miền `<HOSTNAME>` về địa chỉ nội bộ `http://127.0.0.1:<PORT>` (trên giao diện Zero Trust Dashboard hoặc qua tệp `/etc/cloudflared/config.yml` kèm lệnh `cloudflared tunnel route dns`). | Bản ghi DNS CNAME của tên miền được tạo tự động trên Cloudflare. |
 | **7.4** | Cài đặt `cloudflared` chạy ngầm như một dịch vụ hệ thống (systemd service) | **Nếu dùng Token:** `sudo cloudflared service install <CF_TUNNEL_TOKEN>`<br>**Nếu dùng tệp cấu hình:** `sudo cloudflared service install && sudo systemctl enable --now cloudflared` | Chạy lệnh `systemctl is-active cloudflared` trả về `active`, trạng thái Tunnel trên bảng điều khiển báo `HEALTHY / Connected`. |
 | **7.5** | ✅ Kiểm tra truy cập thực tế từ bên ngoài | Mở trình duyệt web truy cập vào địa chỉ `https://<HOSTNAME>`. | Trang web hoặc API phản hồi chính xác và có sẵn chứng chỉ bảo mật HTTPS của Cloudflare. |
+
+
+<p align="center">
+    <img width="1280" height="647" alt="image" src="https://github.com/user-attachments/assets/8fafc8a4-8778-477f-8917-90942b1774a4" />
+</p>
 
 **Lưu ý khi triển khai nhiều website khách hàng trên cùng một VPS:** Mỗi website khách hàng là một mục Ingress riêng trong cấu hình đường hầm — ví dụ `ten-mien-khach-A.com` → `http://127.0.0.1:3000`, `ten-mien-khach-B.com` → `http://127.0.0.1:8080` — hoặc tách thành đường hầm riêng cho từng khách hàng nếu yêu cầu cách ly cao hơn. Mỗi dự án khách hàng cần được ghi nhận vào hồ sơ máy chủ theo bảng đối chiếu: **tên miền ↔ cổng nội bộ ↔ thư mục mã nguồn ↔ cơ sở dữ liệu**, để khi bảo trì, xử lý sự cố hoặc sao lưu không nhầm lẫn giữa các dự án.
 
@@ -308,28 +344,24 @@ df -h / /tmp
 ```
 
 ### 4.2. Công việc bảo trì hằng tháng (Thời lượng: ~30 phút)
-1. **Đánh giá lại mức độ an toàn hệ thống:** Chạy lệnh `sudo lynis audit system --quick`, đối chiếu điểm số bảo mật với tháng trước và khắc phục từ 2 đến 3 khuyến nghị quan trọng nhất.
-2. **Kiểm tra tính toàn vẹn của kho sao lưu:** Chạy lệnh `source /etc/restic.env && restic check` và thực hiện khôi phục thử một tệp dữ liệu ngẫu nhiên để đảm bảo bản sao lưu không bị hỏng.
-3. **Rà soát danh sách tài khoản người dùng trên hệ thống:** Chạy lệnh `awk -F: '$3 >= 1000 && $3 != 65534 {print $1}' /etc/passwd` để phát hiện sớm nếu có bất kỳ tài khoản lạ nào xuất hiện.
-4. **Rà soát danh sách chặn của Fail2ban:** Nếu phát hiện địa chỉ IP hợp lệ của quản trị viên vô tình bị khóa nhầm, gỡ chặn bằng lệnh `sudo fail2ban-client set sshd unbanip <IP>`.
-5. **Kiểm tra sức khỏe bộ nhớ RAM:** Chạy lệnh `free -h` và kiểm tra tỷ lệ sử dụng RAM (môi trường LXC/ZFS của công ty không có Swap, nên RAM là tài nguyên duy nhất cần theo dõi sát). Nếu RAM thường xuyên bị sử dụng trên $80\%$ trong thời gian dài, cần xem xét nâng cấp cấu hình RAM vì khối lượng ứng dụng đã vượt quá sức chứa của bộ nhớ hiện tại.
+
+<p align="center">
+    <img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/ec184213-3076-40e7-90b3-6d293dba79ec" />
+</p>
 
 ### 4.3. Quy trình ứng phó sự cố khi nghi ngờ máy chủ bị xâm nhập
-1. **Cô lập mạng ngay lập tức:** Truy cập vào bảng điều khiển của nhà cung cấp VPS để ngắt kết nối mạng công cộng hoặc khóa toàn bộ lưu lượng qua tường lửa ngoài, chỉ giữ kết nối qua giao diện Web Console nội bộ.
-2. **Thu thập bằng chứng truy cập:** Kiểm tra các phiên đang đăng nhập và lịch sử truy cập bằng các lệnh: `who`, `last -a | head -n 20`, và `sudo journalctl -u ssh -u sshd --since "2 hours ago"` để xác định nguồn gốc truy cập trái phép.
-3. **Nguyên tắc xử lý triệt để (Không vá víu tại chỗ):** Nếu xác nhận máy chủ đã bị chiếm quyền điều khiển (Rootkit/Backdoor), **tuyệt đối không cố gắng xóa mã độc thủ công để dùng tiếp**. Hãy tạo một bản chụp nhanh (Snapshot) phục vụ điều tra, sau đó **hủy máy chủ cũ, khởi tạo một VPS mới hoàn toàn** và chạy lại quy trình bảo mật này kết hợp khôi phục dữ liệu từ bản sao lưu Restic sạch gần nhất (toàn bộ quá trình chỉ mất khoảng 15–20 phút nhưng đảm bảo an toàn tuyệt đối).
-4. **Thu hồi và cấp mới toàn bộ khóa bảo mật (Rotate Secrets):** Đổi toàn bộ khóa xác thực Tailscale, Cloudflare Tunnel Token, mật khẩu kho sao lưu Restic và các khóa API ứng dụng từng lưu trên máy chủ bị xâm nhập.
+
+<p align="center">
+    <img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/42340ba4-3fdd-4ca7-9624-08e13e8b3c89" />
+</p>
+
 
 ### 4.4. Quy trình ứng phó khi dung lượng ổ đĩa đầy dần bất thường
-*(Đây là tình huống thường gặp trên các máy chủ có dung lượng lưu trữ hạn chế, cần được xử lý ngay để tránh hệ thống đóng dịch vụ hoặc không thể khởi động lại.)*
-1. **Xác định thủ phạm:** Chạy lệnh `sudo du -xh --max-depth=2 / 2>/dev/null | sort -rh | head -n 20` để sắp xếp và hiển thị 20 thư mục lớn nhất trên hệ thống.
-2. **Xử lý theo từng trường hợp thường gặp:**
-   * **Nhật ký hệ thống hoặc nhật ký ứng dụng phình to:** Dọn dẹp bằng lệnh `sudo journalctl --vacuum-size=200M` đối với nhật ký systemd, và kiểm tra chính sách xoay vòng (logrotate) của ứng dụng cụ thể.
-   * **Bộ nhớ đệm hệ thống phình to:** Chạy lệnh `sudo systemd-tmpfiles --clean` để dọn dẹp các tệp tạm hết hạn.
-   * **Bản sao lưu hoặc tệp tải về bị quên:** Kiểm tra thư mục `/var/backups`, `/var/cache` và xóa các tệp không còn cần thiết.
-3. **Phòng ngừa dài hạn:** Sau khi xử lý xong, xác nhận lại rằng các ràng buộc dung lượng tại **Bước 1.6, 1.7, 1.8** và cơ chế cảnh báo tại **Bước 9.2** vẫn đang hoạt động bình thường; nếu một trong các cơ chế đã bị vô hiệu hóa, hãy khôi phục lại cấu hình gốc.
 
----
+<p align="center">
+    <img width="1200" height="630" alt="image" src="https://github.com/user-attachments/assets/90d98a24-b65c-4d88-8acb-aba43da5441e" />
+
+</p>
 
 ## 5. Hướng dẫn xử lý các sự cố thường gặp (Troubleshooting)
 
@@ -368,11 +400,3 @@ Bảng dưới đây quy định cấu trúc tham số dòng lệnh (CLI Flags) 
 | **Tổng thể** | `--all --level <L1\|L2\|L3>` | Có | Thực thi tuần tự từ Phase 1 đến Phase 9 theo cấp độ bảo mật đã chọn. |
 
 ---
-
-## 7. Thông tin phê duyệt tài liệu
-
-| Hạng mục | Thông tin xác nhận |
-| :--- | :--- |
-| **Người biên soạn** | |
-| **Ngày ban hành / cập nhật** | |
-| **Người kiểm duyệt & phê duyệt** | |
